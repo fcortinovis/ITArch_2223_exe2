@@ -93,36 +93,33 @@ void configureIO()
 {
 	DDRD = 0x00;	DDRB = 0x00;
 //  Configure the outputs:	DDRD |= (1 << DDD7); // led A1 -> to be seen what effect it has on the ATmega on the BB-Board	DDRB |= (1 << DDB0); // led A2 -> to be seen what effect it has on the ATmega on the BB-Board	DDRB |= (1 << DDB1); // led A3 -> to be seen what effect it has on the ATmega on the BB-Board//  Setting the bits of PortD and PortB LOW	PORTD &= ~(1 << PORTD7);	PORTB &= ~(1 << PORTB0);	PORTB &= ~(1 << PORTB1);	//  Disable the pull up resistors of the input pins (reed sensors)	PORTD &=~(1 << PORTD2);	PORTD &=~(1 << PORTD3);}
-void configureTimer(){	/*	Timer Counter Control Register 0 A (TCCR0A) Set register to 0 (default)
-	For further information see ATmega328P manual	*/	TCCR0A = 0x00;//	Timer Counter Control Register 0 B (TCCR0B) Set register to 0 (default)
+void configureTimer(){//	Timer Counter Control Register 0 A (TCCR0A) Set register to 0 (default)//	For further information see ATmega328P manual	TCCR0A = 0x00;//	Timer Counter Control Register 0 B (TCCR0B) Set register to 0 (default)
 	TCCR0B = 0x00;
 
 //	Configure the prescaler:
 	volatile const uint8_t prescaler = 5;
-	configure_prescaler(prescaler)//
-	/*	TC0 Interrupt Mask Register (TIMSK0)
-	The TOIE bit activates the overflow interrupt	*/	TIMSK0 = 0x00;	TIMSK0 |= (1 << TOIE0);}
+	configure_prescaler(prescaler)//	TC0 Interrupt Mask Register (TIMSK0)//	The TOIE bit activates the overflow interrupt	*/	TIMSK0 = 0x00;	TIMSK0 |= (1 << TOIE0);}
 void configure_prescaler(uint8_t prescaler)
 {
-//	The three bits of TCCR0B CS00, CS01 and CS02 configure the prescaler:/*	| CS02 | CS01 | CS00 | Prescaler |	|   0  |   0  |   0  |  no clock |    |   0  |   0  |   1  |    1      |    |   0  |   1  |   0  |    8      |    |   0  |   1  |   1  |    64     |    |   1  |   0  |   0  |    256    |    |   1  |   0  |   1  |    1024   |*/
+//	The three bits of TCCR0B CS00, CS01 and CS02 configure the prescaler:////  | CS02 | CS01 | CS00 | Prescaler |//	|   0  |   0  |   0  |  no clock |//  |   0  |   0  |   1  |    1      |//  |   0  |   1  |   0  |    8      |//  |   0  |   1  |   1  |    64     |//  |   1  |   0  |   0  |    256    |//  |   1  |   0  |   1  |    1024   |
 	switch (prescaler)
 	{
-		case 1: // prescaling factor 1			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;
 		case 2: // prescaling factor 8
 			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B |= (1 << CS01); // Set CS01 to 1			TCCR0B &=~(1 << CS00); // Set CS00 to 0
 			break;
 		case 3: // prescaling factor 64
 			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B |= (1 << CS01); // Set CS01 to 1			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;		case 4: // prescaling factor 256			TCCR0B |= (1 << CS02); // Set CS02 to 1			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B &=~(1 << CS00); // Set CS00 to 0			break;		case 5: // prescaling factor 1024			TCCR0B |= (1 << CS02); // Set CS02 to 1			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;		default: // prescaling factor 1			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;	}
 }
-/*	TIMER0_OVF_vect is the interrupt vector for an overflow of timer 0
-	ISR is the interrupt service routine*/
-ISR(TIMER0_OVF_vect){	/*The clock of the ATmega328P is 16 MHz
-	The timer can save 8 bits (256 values) before it overflows
+//	TIMER0_OVF_vect is the interrupt vector for an overflow of timer 0
+//	ISR is the interrupt service routine
+ISR(TIMER0_OVF_vect){
+//  The clock of the ATmega328P is 16 MHz
+//  The timer can save 8 bits (256 values) before it overflows
 
-	The overflow therefore occurs with one frequency
-	f = 16 MHz / 256 / (prescaler) = 62.5 kHz / (prescaler)
+//	The overflow therefore occurs with one frequency
+//	f = 16 MHz / 256 / (prescaler) = 62.5 kHz / (prescaler)
 
-	To define the time at which the event happens, calculation of number for iCounter is needed	*/	iCounter++;	if((iCounter>=400) & (flagB0==0))	{		PORTB |=(1 << PORTB1);		flagB0=1;		iCounter=0;	}
+//	To define the time at which the event happens, calculation of number for iCounter is needed	iCounter++;	if((iCounter>=400) & (flagB0==0))	{		PORTB |=(1 << PORTB1);		flagB0=1;		iCounter=0;	}
 	if((iCounter>=400) & (flagB0==1))	{		PORTB &= ~(1 << PORTB1);		flagB0=0;		iCounter=0;	}}
 int main(){	configureIO();	configureTimer();//  Set the interrupt register bits	sei();		while(1)    {	}			}
 #endif
@@ -142,24 +139,20 @@ int main(){	configureIO();	configureInterrupt();	// Set the interrupt regist
 //===================================================================//
 // Task 5: hardware PWM generation (allows analog signal generation) //
 //===================================================================//
-void configureIO(){	/*		All bits of the DataDirectionRegister of Port D (DDRD) are set to LOW and are thus configured as inputs.
-	In binary notation, DDRD is now: 00000000	*/	DDRD = 0x00;	DDRB = 0x00;
-	/*		The bit in the 8th position (D7) is set to one -> output
-	In binary notation, DDRD is now: 10000000	*/	//DDRD |= (1 << DDD7);	//DDRD |= (1 << DDD5);
+void configureIO(){		DDRD = 0x00;	DDRB = 0x00;
 //  Outputs:	DDRD |= (1 << DDD6); // on PD6 we have the PWM generation to set the speed	DDRD |= (1 << DDD7); // on PD7 we have the direction signal	DDRB |= (1 << DDB1); // on PB1 we have the "enable" signal	DDRB |= (1 << DDB0); // on PB0 we have the led A2 (otherwise unused)	PORTB &= 0x00;//  Inputs:	PORTD &=~(1 << PORTD2); // pullup disabled on pin connected to reed sensor B1	PORTD &=~(1 << PORTD3); // pullup disabled on pin connected to reed sensor B2}void configure_prescaler(uint8_t prescaler)
 {
-//	The three bits of TCCR0B CS00, CS01 and CS02 configure the prescaler:/*	| CS02 | CS01 | CS00 | Prescaler |	|   0  |   0  |   0  |  no clock |    |   0  |   0  |   1  |    1      |    |   0  |   1  |   0  |    8      |    |   0  |   1  |   1  |    64     |    |   1  |   0  |   0  |    256    |    |   1  |   0  |   1  |    1024   |*/
+//	The three bits of TCCR0B CS00, CS01 and CS02 configure the prescaler:
 	switch (prescaler)
 	{
-		case 1: // prescaling factor 1			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;
 		case 2: // prescaling factor 8
 			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B |= (1 << CS01); // Set CS01 to 1			TCCR0B &=~(1 << CS00); // Set CS00 to 0
 			break;
 		case 3: // prescaling factor 64
 			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B |= (1 << CS01); // Set CS01 to 1			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;		case 4: // prescaling factor 256			TCCR0B |= (1 << CS02); // Set CS02 to 1			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B &=~(1 << CS00); // Set CS00 to 0			break;		case 5: // prescaling factor 1024			TCCR0B |= (1 << CS02); // Set CS02 to 1			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;		default: // prescaling factor 1			TCCR0B &=~(1 << CS02); // Set CS02 to 0			TCCR0B &=~(1 << CS01); // Set CS01 to 0			TCCR0B |= (1 << CS00); // Set CS00 to 1			break;	}
 }
-void configurePWM(){	/*	The switching ratio can be specified using OCR0A.
-	0x80 (128) corresponds to 50%	0xFF (255) corresponds to 100%	*/	OCR0A = 200; //duty cycle (sets the value of the analog output)		TIMSK0=0x00; // disable timer interrupts//  Timer Counter Control Register 0 A set to default at first:	TCCR0A=0x00;//  The bit COM0A1 activates the PWM on output OC0A (pin PD6)):	TCCR0A |= (1<<COM0A1);//	Set the "mode of operation" to Fast PWM; for this we need both TCCR0A and TCCR0B:	TCCR0B=0x00;	TCCR0B &=~(1<<WGM02);	TCCR0A |= (1<<WGM00 | 1<<WGM01);//  As before we can use TCCR0B to set the prescaler value:	configure_prescaler(1);}
+void configurePWM(){//  The switching ratio can be specified using OCR0A.
+//	0x80 (128) corresponds to 50%//	0xFF (255) corresponds to 100%	OCR0A = 200; //duty cycle (sets the value of the analog output)		TIMSK0=0x00; // disable timer interrupts//  Timer Counter Control Register 0 A set to default at first:	TCCR0A=0x00;//  The bit COM0A1 activates the PWM on output OC0A (pin PD6)):	TCCR0A |= (1<<COM0A1);//	Set the "mode of operation" to Fast PWM; for this we need both TCCR0A and TCCR0B:	TCCR0B=0x00;	TCCR0B &=~(1<<WGM02);	TCCR0A |= (1<<WGM00 | 1<<WGM01);//  As before we can use TCCR0B to set the prescaler value:	configure_prescaler(1);}
 int main(void)
 {	configureIO();	configurePWM();
 	PORTD |= (1 << PORTD7); // on PD7 we have the direction signal	PORTB |= (1 << PORTB1); // on PB1 we have the "enable" signal
@@ -169,8 +162,8 @@ int main(void)
 //==============================================================//
 // Task 6: combine previous tasks to control the rotating table //
 //==============================================================//
-void configureIO(){	/*		All bits of the DataDirectionRegister of Port D (DDRD) are set to LOW and are thus configured as inputs.
-	In binary notation, DDRD is now: 00000000	*/	DDRD = 0x00;	DDRB = 0x00;
+void configureIO(){//	All bits of the DataDirectionRegister of Port D (DDRD) are set to LOW and are thus configured as inputs.
+//	In binary notation, DDRD is now: 00000000	DDRD = 0x00;	DDRB = 0x00;
 //  Outputs:	DDRD |= (1 << DDD6); // on PD6 we have the PWM generation to set the speed	DDRD |= (1 << DDD7); // on PD7 we have the direction signal	DDRB |= (1 << DDB1); // on PB1 we have the "enable" signal	DDRB |= (1 << DDB0); // on PB0 we have the led A2 (otherwise unused)	PORTB &= 0x00;//  Inputs:	PORTD |= (1 << PORTD2); // pullup enabled on pin connected to reed sensor B1	PORTD |= (1 << PORTD3); // pullup enabled on pin connected to reed sensor B2}
 
 void configurePWM(){//  The switching ratio can be specified using OCR0A. 0x80 (128) corresponds to 50%	OCR0A = 64; //duty cycle (sets the value of the analog output)
